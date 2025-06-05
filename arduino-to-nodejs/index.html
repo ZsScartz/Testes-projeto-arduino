@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Arduino to Node.js Communication</title>
+        <!-- O cliente Socket.IO será servido automaticamente pelo servidor Node.js -->
+        <script src="/socket.io/socket.io.js"></script>
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                background-color: #f4f4f4;
+                color: #333;
+            }
+            h1 {
+                color: #0056b3;
+            }
+            #sample {
+                background-color: red;
+                width: 300px;
+                height: 300px;
+                border: 2px solid darkred;
+                transition: opacity 0.5s ease-in-out; /* Adiciona uma transição suave */
+            }
+            #data-display {
+                margin-top: 20px;
+                font-size: 1.2em;
+            }
+        </style>
+    </head>
+    <body>
+
+        <h1>Comunicando do Arduino para Node.js (Atualizado)</h1>
+
+        <div id="sample"></div>
+        <div id="data-display">Valor recebido: <span id="value">N/A</span></div>
+
+        <script>
+            // Conecta ao servidor Socket.IO (o mesmo que serve esta página)
+            var socket = io();
+
+            socket.on('connect', function() {
+                console.log('Conectado ao servidor Socket.IO!');
+            });
+
+            socket.on('data', function(data) {
+                console.log('Dados recebidos do servidor:', data);
+
+                // Converte o dado para número. O Arduino envia algo como "50" para 50%.
+                let numericData = parseFloat(data);
+
+                if (!isNaN(numericData)) {
+                    // CSS opacity espera um valor entre 0 e 1.
+                    // Se o Arduino envia 0-100, dividimos por 100.
+                    let opacityValue = numericData / 100;
+
+                    // Garante que o valor está entre 0 e 1
+                    opacityValue = Math.max(0, Math.min(1, opacityValue));
+
+                    document.getElementById('sample').style.opacity = opacityValue;
+                    document.getElementById('value').textContent = numericData + "% (Opacidade: " + opacityValue.toFixed(2) + ")";
+                } else {
+                    console.warn('Dado recebido não é um número válido:', data);
+                    document.getElementById('value').textContent = "Erro: " + data;
+                }
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Desconectado do servidor Socket.IO.');
+                document.getElementById('value').textContent = "Desconectado";
+            });
+
+            socket.on('connect_error', (err) => {
+              console.error("Erro de conexão com o Socket.IO:", err.message);
+              document.getElementById('value').textContent = "Erro de conexão";
+            });
+        </script>
+
+    </body>
+</html>
